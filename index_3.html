@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>App</title>
+  <meta name="robots" content="noindex">
+  <!-- Inline SVG favicon to avoid a 404 request -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%E2%9A%A1</text></svg>">
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --accent: #2563eb;
+      --border: #e5e7eb;
+      --text: #111827;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* The embedded web app fills the entire viewport */
+    #appFrame {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+
+    /* Loading overlay shown until the iframe finishes loading */
+    #loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: var(--bg);
+      color: var(--text);
+      z-index: 10;
+      transition: opacity 0.35s ease;
+    }
+    #loader.hidden { opacity: 0; pointer-events: none; }
+
+    .spinner {
+      width: 42px;
+      height: 42px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader-text { font-size: 14px; color: #6b7280; }
+
+    /* Error fallback (shown only if the frame never loads) */
+    #errorBox {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 24px;
+      text-align: center;
+      background: var(--bg);
+      color: var(--text);
+      z-index: 20;
+    }
+    #errorBox a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    #errorBox a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div id="loader">
+    <div class="spinner" role="status" aria-label="Loading"></div>
+    <div class="loader-text">Loading…</div>
+  </div>
+
+  <div id="errorBox">
+    <h2 style="margin:0;font-size:18px;">Couldn't load the app</h2>
+    <p style="margin:0;max-width:420px;color:#6b7280;font-size:14px;">
+      If this keeps happening, the embedded app may not allow framing, or it may be temporarily unavailable.
+    </p>
+    <a id="directLink" href="#" target="_blank" rel="noopener">Open the app directly →</a>
+  </div>
+
+  <!-- Embedded Google Apps Script web app.
+       The /exec deployment is loaded in a full-screen iframe, which hides
+       Google's consumer free-tier banner from the top of the page.
+       Requires the GAS doGet to set:
+         .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL) -->
+  <iframe
+    id="appFrame"
+    src="https://script.google.com/macros/s/AKfycbxpVQKAXgUAoU_Oxo92Jkt8j34rFEObJnAoLYYuewvzAsPlD2F1LzxcFHSBZ8JYGuL9gw/exec"
+    title="App"
+    allow="clipboard-read; clipboard-write; fullscreen; camera; microphone; geolocation"
+    allowfullscreen
+    referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+  <script>
+    (function () {
+      var frame = document.getElementById('appFrame');
+      var loader = document.getElementById('loader');
+      var errorBox = document.getElementById('errorBox');
+      var directLink = document.getElementById('directLink');
+      directLink.href = frame.src;
+
+      var loaded = false;
+
+      function hideLoader() {
+        if (loaded) return;
+        loaded = true;
+        loader.classList.add('hidden');
+        setTimeout(function () { loader.style.display = 'none'; }, 400);
+      }
+
+      frame.addEventListener('load', hideLoader);
+
+      // Safety net: if the frame never fires 'load' within 20s, show a fallback.
+      setTimeout(function () {
+        if (!loaded) {
+          loader.style.display = 'none';
+          errorBox.style.display = 'flex';
+        }
+      }, 20000);
+    })();
+  </script>
+
+</body>
+</html>
